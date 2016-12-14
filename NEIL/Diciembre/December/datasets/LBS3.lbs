@@ -1,0 +1,68 @@
+directive simulation deterministicstiff
+directive reltolerance 1e-6
+directive sample 700.0 1000
+directive plot YFP
+directive time minutes
+directive parameters
+  [ r,(0.0008,0.03),0.01,log,multiple
+  // the original r is 0.008  OJO. acá lo hice así porque siento que me tira un poco el parámetro
+  ; K,(0.3,0.8),0.7,real,multiple
+  ; x0,(1e-4,1e-2),1e-3,log,random
+  ; IPTGsens,(1.0e-4,10000.0),1.0,real,multiple
+  //can a parameter be bigger than 1?. Why cant I put 1 but 0.9, even if it fits between the limmits of the parameter distribution
+  ; TXCN,(1e-2,10.0),0.1,log,multiple
+  ; TX, (1e-4,10.0),0.1,log,random
+  ; TL, (1.0e-3,100.0),0.2,log,multiple
+  ; deg, (0.00001, 1.0),0.2,real, random
+  ; t0,(0.0,10.0),0.05,real,random
+  ; b0,(0.05,0.1),0.05,real,random
+  ; lk, (10.0,1000.0),0.5,real,random
+  ; c0,(0.0,15000.0),0.05,real,random
+  ; y0,(0.0,10000.0),0.05,real,random]
+
+directive sweep sweepMetabCharge = { gr = [1, 2, 3, 4, 5, 6] }
+directive fit {sweepMetabCharge; datarep1; [x+back; x*YFP; x*CFP]  }
+directive fit_run {burnin=10000; samples=10000}
+
+spec iCFP; spec YFP; 
+
+init x x0 |
+init polT7 t0 |
+init back b0 |
+init cback c0 |
+init yback y0 |
+
+//logistic growth rate with carring capacity
+->[r*x*(1--x/K)] x |
+//x ->[x*IPTGsens*(1--x/K)] polT7 + x |
+
+//IPTG sensitivity regulates polymerase T7
+->{IPTGsens} polT7 |
+
+//Dilution
+x ~ polT7 ->[r*polT7*(1--x/K)] |
+x ~ iCFP ->[r*iCFP*(1--x/K)] |
+x ~ CFP ->[CFP*r*(1--x/K)] |
+x ~ iYFP ->[iYFP*r*(1--x/K)] |
+x ~ YFP ->[YFP*r*(1--x/K)] |
+x ~ trigger ->[trigger*r*(1--x/K)] |
+x ~ S1YC ->[S1YC*r*(1--x/K)] |
+
+//why I cannot put ->[x*IPTGsens] polT7 |  ??. It says It didn´t find parameter X.. but it is not a parameter, it is a result...
+//I put x at the two sites of the ecuatino to avoid changes in x..  ->[IPTG*x] polT7 + x but I know that something is wrong.
+// I want to put that the amount of polT7 produced will be given by x and by a parameter related to IPTG (Some cells have IPTG, and others don´t). 
+// Also, some bacterias have different copy number of the trigger plasmid. How can I put all this in the LBS ? Can I do several sweeps ? or tell the program which data has IPTG, or which copy number ? 
+// can I do several sweeps in a sweep ?
+
+//degradation
+S1YC->{deg} |
+trigger->{deg} |
+
+polT7 ~ ->{TX} S1YC |
+polT7 ~ ->{TXCN} trigger |
+trigger + S1YC ->{TL} iCFP + iYFP |
+S1YC->{lk} iYFP + S1YC |
+S1YC->{TL} iCFP + S1YC |
+
+iCFP->{0.8} CFP |
+iYFP->{0.8} YFP

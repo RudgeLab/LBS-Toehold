@@ -1,0 +1,43 @@
+directive simulation deterministicstiff
+directive sample 700.0 1000
+directive plot YFP
+directive time minutes
+directive parameters
+  [ r,(1.0e-3,1.0),0.02,log,multiple
+  ; K,(0.0,1.0),0.7,real,multiple
+  ; x0,(1e-4,1e0),1e-3,log,random
+  ; IPTGsens,(1.0e-4,10000.0),9.0,real,multiple
+  //can a parameter be bigger than 1?. Why cant I put 1 but 0.9, even if it fits between the limmits of the parameter distribution
+  ; CN,(1e-4,1e5),1e-1,log,random
+  ;TX, (1e-4,1e4),0.1,log,random
+  ; TL, (1.0e-3,1.0),0.2,log,multiple
+  ; b0,(0.0,0.1),0.05,real,random]
+
+directive sweep sweepMetabCharge = { gr = [1, 2, 3, 4, 5, 6] }
+directive fit {sweepMetabCharge; datarep1; [x+back; YFP; CFP]  }
+directive fit_run {burnin=100; samples=1000}
+
+init x x0 |
+init T7 x0|
+init back b0 |
+//logistic growth rate with carring capacity
+->[r*x*(1--x/K)] x | 
+x->[x*IPTGsens*(1--x/K)] polT7 + x |
+
+//why I cannot put ->[x*IPTGsens] polT7 |  ??. It says It didn´t find parameter X.. but it is not a parameter, it is a result...
+//I put x at the two sites of the ecuatino to avoid changes in x..  ->[IPTG*x] polT7 + x but I know that something is wrong.
+// I want to put that the amount of polT7 produced will be given by x and by a parameter related to IPTG (Some cells have IPTG, and others don´t). 
+// Also, some bacterias have different copy number of the trigger plasmid. How can I put all this in the LBS ? Can I do several sweeps ? or tell the program which data has IPTG, or which copy number ? 
+// can I do several sweeps in a sweep ?
+
+polT7 ->[polT7*TX] S1YC + polT7 |
+polT7 ->[polT7*TX*CN] trigger + polT7 |
+trigger + S1YC->[S1YC*trigger] complex |
+
+
+S1YC->[S1YC*TX] iCFP+ S1YC |
+
+complex ->[TL*complex] iCFP + iYFP + complex |
+
+iCFP->[0.8*iCFP] CFP |
+iYFP->[0.8*iYFP] YFP

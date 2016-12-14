@@ -1,0 +1,15 @@
+directive simulation deterministic
+directive sample 710.0 1000
+directive plot OD
+directive time minutes
+directive parameters
+ [ mc = 1.0
+  ; T = 0.1 
+  ; gr,(1.0e-4,1.0),0.02,log,random]
+  // The first parameter that I want to fit is growth rate, gr. Then I could use the stimated gr in a more complex model  
+  // Looking at the data, it seems that gr depends on the metabolic charge (translation), (trigger-plasmid copy number[zero, Low, High] *IPTG [0,1]). So I have 3 different growth rates. 
+ // I try to sweep 3 values of gr that repressent different metabolic charges) 
+  directive sweep sweepMetabCharge = { gr = [0.008, 0.005, 0.004] }
+  //directive fit {sweepMetabCharge ,DATA1.tsv,OD}
+init inocule 100 |
+inocule->{gr}OD

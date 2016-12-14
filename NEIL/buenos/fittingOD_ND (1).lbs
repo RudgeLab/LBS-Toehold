@@ -1,0 +1,17 @@
+directive simulation deterministicstiff
+directive sample 710.0 1000
+directive plot OD
+directive time minutes
+directive parameters
+  [ r,(1.0e-3,1.0),0.02,log,multiple
+  ; K,(0.0,1.0),0.7,real,multiple
+  ; x0,(1e-4,1e0),1e-3,log,random
+  ; b0,(0.0,0.1),0.05,real,random]
+
+directive sweep sweepMetabCharge = { gr = [0.008, 0.005, 0.004] }
+directive fit {sweepMetabCharge; data; x+back}
+directive fit_run {burnin=5000; samples=5000}
+
+init x x0 |
+init back b0 |
+->[r*x*(1--x/K)] x
