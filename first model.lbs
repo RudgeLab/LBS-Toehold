@@ -1,0 +1,36 @@
+directive sample 1440.0 1000
+directive plot DNA
+directive time m
+directive simulation deterministic
+directive event DNA 1.0 * C @ T1
+directive parameters 
+
+	[
+	T0, (10.0 , 700000.0), 200.0, real, multiple;
+ 	initRibo,(10000.0, 1000.0), 2000.0,real, multiple;
+	T1,(0.0,5.0),1.0, real, random;
+	
+   	Tx, (1.0e-3 , 1000.0), 0.001, log, random;
+	Tl, (1.0, 10000.0), 10000.0, log, random;
+	
+	mat,(1.0e-5, 2.0e-3), 0.0001,log, multiple; 
+	//degDNA, (0.0 , 0.5), 0.2, log, multiple; 
+	//degRNAm, (0.0 , 1.0), 0.5, log, multiple; 
+	degT7, (1.0e-10,100.0 ), 0.84, real, multiple
+	
+	//DNA = 0.0
+	]
+	
+directive sweep input = { C = [ 0.0, 7.0, 14.0, 21.0] } 	
+	
+init POLT7 T0 |	
+init Ribo	initRibo |
+
+
+
+
+
+DNA ~  POLT7 ->{Tx} RNAm  |
+RNAm ~  Ribo ->{Tl} deGFPi | 
+deGFPi->{mat} deGFP 
+//POLT7->[degT7]
